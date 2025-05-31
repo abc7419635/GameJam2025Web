@@ -86,88 +86,29 @@
       // the canvas DOM size and WebGL render target sizes yourself.
       config.matchWebGLToCanvasSize = false;
 
-      // 更強健的移動設備檢測
-      function isMobileDevice() {
-        // 多重檢測方法
-        const userAgent = navigator.userAgent.toLowerCase();
-        const mobileKeywords = [
-          'mobile', 'android', 'iphone', 'ipad', 'ipod', 
-          'blackberry', 'windows phone', 'opera mini', 
-          'iemobile', 'webos', 'palm'
-        ];
-        
-        // 檢查 User Agent
-        const hasKeyword = mobileKeywords.some(keyword => userAgent.includes(keyword));
-        
-        // 檢查觸控支援
-        const hasTouchScreen = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-        
-        // 檢查螢幕尺寸 (小於 768px 寬度通常是移動設備)
-        const isSmallScreen = window.innerWidth < 768;
-        
-        // 檢查設備方向 API
-        const hasOrientationAPI = 'orientation' in window;
-        
-        console.log('設備檢測結果:', {
-          userAgent: navigator.userAgent,
-          hasKeyword,
-          hasTouchScreen,
-          isSmallScreen,
-          hasOrientationAPI,
-          screenWidth: window.innerWidth
-        });
-        
-        return hasKeyword || (hasTouchScreen && isSmallScreen);
-      }
-
-      if (isMobileDevice()) {
-        console.log('檢測到移動設備，顯示不支援訊息');
-        // 清空容器並顯示不支援訊息
-        container.innerHTML = '';
-        container.style.cssText = `
-          display: flex !important;
-          justify-content: center !important;
-          align-items: center !important;
-          min-height: 100vh !important;
-          padding: 20px !important;
-          box-sizing: border-box !important;
+      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+        // 检测到移动设备，显示提示信息并阻止游戏加载
+        container.innerHTML = `
+          <div style="
+            background: #333; 
+            color: white; 
+            padding: 40px; 
+            border-radius: 10px; 
+            text-align: center; 
+            max-width: 500px;
+            font-family: Arial, sans-serif;
+          ">
+            <h2 style="color: #ff6b6b; margin-bottom: 20px;">⚠️ 設備不支援</h2>
+            <p style="font-size: 18px; line-height: 1.6; margin-bottom: 20px;">
+              此遊戲僅支援在電腦(PC/Mac)上運行
+            </p>
+            <p style="font-size: 14px; color: #ccc;">
+              請使用桌面瀏覽器訪問此遊戲
+            </p>
+          </div>
         `;
-        
-        const messageDiv = document.createElement('div');
-        messageDiv.style.cssText = `
-          background: #333 !important;
-          color: white !important;
-          padding: 40px !important;
-          border-radius: 15px !important;
-          text-align: center !important;
-          max-width: 500px !important;
-          width: 90% !important;
-          font-family: Arial, sans-serif !important;
-          box-shadow: 0 4px 20px rgba(0,0,0,0.5) !important;
-          border: 2px solid #ff6b6b !important;
-        `;
-        
-        messageDiv.innerHTML = `
-          <div style="font-size: 48px; margin-bottom: 20px;">📱❌</div>
-          <h2 style="color: #ff6b6b !important; margin-bottom: 20px !important; font-size: 24px !important;">
-            設備不支援
-          </h2>
-          <p style="font-size: 18px !important; line-height: 1.6 !important; margin-bottom: 20px !important;">
-            此遊戲僅支援在電腦(PC/Mac)上運行
-          </p>
-          <p style="font-size: 14px !important; color: #ccc !important; margin-bottom: 15px !important;">
-            請使用桌面瀏覽器訪問此遊戲
-          </p>
-          <p style="font-size: 12px !important; color: #888 !important;">
-            遊戲需要鍵盤和滑鼠操作
-          </p>
-        `;
-        
-        container.appendChild(messageDiv);
         return; // 阻止後續代碼執行
       }
-
-      console.log('檢測到桌面設備，開始載入遊戲');
 
       loadingBar.style.display = "block";
 

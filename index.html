@@ -87,27 +87,11 @@
       config.matchWebGLToCanvasSize = false;
 
       if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        // 检测到移动设备，显示提示信息并阻止游戏加载
-        container.innerHTML = `
-          <div style="
-            background: #333; 
-            color: white; 
-            padding: 40px; 
-            border-radius: 10px; 
-            text-align: center; 
-            max-width: 500px;
-            font-family: Arial, sans-serif;
-          ">
-            <h2 style="color: #ff6b6b; margin-bottom: 20px;">⚠️ 設備不支援</h2>
-            <p style="font-size: 18px; line-height: 1.6; margin-bottom: 20px;">
-              此遊戲僅支援在電腦(PC/Mac)上運行
-            </p>
-            <p style="font-size: 14px; color: #ccc;">
-              請使用桌面瀏覽器訪問此遊戲
-            </p>
-          </div>
-        `;
-        return; // 阻止後續代碼執行
+        // Mobile device style: fill the whole browser client area with the game canvas:
+        var meta = document.createElement('meta');
+        meta.name = 'viewport';
+        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
+        document.getElementsByTagName('head')[0].appendChild(meta);
       }
 
       loadingBar.style.display = "block";

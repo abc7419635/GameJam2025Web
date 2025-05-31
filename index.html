@@ -30,84 +30,209 @@
       <div id="unity-warning"> </div>
     </div>
     <script>
-      window.addEventListener("load", function () {
-        if ("serviceWorker" in navigator) {
-          navigator.serviceWorker.register("ServiceWorker.js");
+      // 檢測設備解析度並阻止低解析度設備
+      function isLowResolutionDevice() {
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
+        
+        // 最低解析度要求：1600×900
+        const minWidth = 1600;
+        const minHeight = 900;
+        
+        const isLowResolution = screenWidth < minWidth || screenHeight < minHeight;
+        
+        // 顯示檢測結果
+        console.log('📊 當前解析度:', `${screenWidth} × ${screenHeight}`);
+        console.log('📏 最低要求:', `${minWidth} × ${minHeight}`);
+        
+        if (isLowResolution) {
+          console.log('❌ 解析度不足，遊戲被阻止');
+          if (screenWidth < minWidth) {
+            console.log('💡 寬度不足: 需要 ' + minWidth + 'px，目前 ' + screenWidth + 'px');
+          }
+          if (screenHeight < minHeight) {
+            console.log('💡 高度不足: 需要 ' + minHeight + 'px，目前 ' + screenHeight + 'px');
+          }
+        } else {
+          console.log('✅ 解析度符合要求，遊戲可以運行');
         }
-      });
-
-      var container = document.querySelector("#unity-container");
-      var canvas = document.querySelector("#unity-canvas");
-      var loadingBar = document.querySelector("#unity-loading-bar");
-      var progressBarFull = document.querySelector("#unity-progress-bar-full");
-      var warningBanner = document.querySelector("#unity-warning");
-
-      // Shows a temporary message banner/ribbon for a few seconds, or
-      // a permanent error message on top of the canvas if type=='error'.
-      // If type=='warning', a yellow highlight color is used.
-      // Modify or remove this function to customize the visually presented
-      // way that non-critical warnings and error messages are presented to the
-      // user.
-      function unityShowBanner(msg, type) {
-        function updateBannerVisibility() {
-          warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
-        }
-        var div = document.createElement('div');
-        div.innerHTML = msg;
-        warningBanner.appendChild(div);
-        if (type == 'error') div.style = 'background: red; padding: 10px;';
-        else {
-          if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
-          setTimeout(function() {
-            warningBanner.removeChild(div);
-            updateBannerVisibility();
-          }, 5000);
-        }
-        updateBannerVisibility();
+        
+        return isLowResolution;
       }
 
-      var buildUrl = "Build";
-      var loaderUrl = buildUrl + "/BuildWeb.loader.js";
-      var config = {
-        dataUrl: buildUrl + "/BuildWeb.data.unityweb",
-        frameworkUrl: buildUrl + "/BuildWeb.framework.js.unityweb",
-        codeUrl: buildUrl + "/BuildWeb.wasm.unityweb",
-        streamingAssetsUrl: "StreamingAssets",
-        companyName: "DefaultCompany",
-        productName: "GameJam2025",
-        productVersion: "1.0",
-        showBanner: unityShowBanner,
+      // 添加手動檢測函數（可在 Console 中調用）
+      window.checkResolution = function() {
+        return isLowResolutionDevice();
       };
 
-      // By default Unity keeps WebGL canvas render target size matched with
-      // the DOM size of the canvas element (scaled by window.devicePixelRatio)
-      // Set this to false if you want to decouple this synchronization from
-      // happening inside the engine, and you would instead like to size up
-      // the canvas DOM size and WebGL render target sizes yourself.
-      config.matchWebGLToCanvasSize = false;
-
-      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        // Mobile device style: fill the whole browser client area with the game canvas:
-        var meta = document.createElement('meta');
-        meta.name = 'viewport';
-        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
-        document.getElementsByTagName('head')[0].appendChild(meta);
+      // 執行解析度檢測
+      if (isLowResolutionDevice()) {
+        // 阻止遊戲載入，顯示解析度不足訊息
+        document.body.innerHTML = `
+          <div style="
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #222;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+          ">
+            <div style="
+              background: #333;
+              color: white;
+              padding: 40px;
+              border-radius: 15px;
+              text-align: center;
+              max-width: 500px;
+              width: 100%;
+              box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+              border: 2px solid #ff6b6b;
+            ">
+              <div style="font-size: 48px; margin-bottom: 20px;">🖥️❌</div>
+              <h2 style="color: #ff6b6b; margin-bottom: 20px; font-size: 24px;">
+                請使用電腦開啟此網頁
+              </h2>
+              <p style="font-size: 18px; line-height: 1.6; margin-bottom: 20px;">
+                此遊戲需要最低解析度 <strong>1600×900</strong>
+              </p>
+              <p style="font-size: 16px; color: #ccc; margin-bottom: 15px;">
+                您目前的解析度：<span style="color: #ff6b6b;">${window.innerWidth}×${window.innerHeight}</span>
+              </p>
+              <p style="font-size: 14px; color: #ccc; margin-bottom: 15px;">
+                請調整螢幕解析度或使用更大的螢幕
+              </p>
+              <p style="font-size: 12px; color: #888; margin-bottom: 20px;">
+                建議使用桌面電腦或大尺寸筆電
+              </p>
+              <button onclick="window.checkResolution()" style="
+                background: #ff6b6b;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 14px;
+              ">
+                重新檢測解析度
+              </button>
+              <p style="font-size: 10px; color: #666; margin-top: 10px;">
+                按 F12 開啟開發者工具查看詳細檢測信息
+              </p>
+            </div>
+          </div>
+        `;
+        
+        // 重新定義檢測函數（因為頁面內容被替換了）
+        window.isLowResolutionDevice = function() {
+          const screenWidth = window.innerWidth;
+          const screenHeight = window.innerHeight;
+          const minWidth = 1600;
+          const minHeight = 900;
+          const isLowResolution = screenWidth < minWidth || screenHeight < minHeight;
+          
+          console.log('📊 當前解析度:', screenWidth + ' × ' + screenHeight);
+          console.log('📏 最低要求:', minWidth + ' × ' + minHeight);
+          
+          if (isLowResolution) {
+            console.log('❌ 解析度不足，遊戲被阻止');
+            if (screenWidth < minWidth) {
+              console.log('💡 寬度不足: 需要 ' + minWidth + 'px，目前 ' + screenWidth + 'px');
+            }
+            if (screenHeight < minHeight) {
+              console.log('💡 高度不足: 需要 ' + minHeight + 'px，目前 ' + screenHeight + 'px');
+            }
+          } else {
+            console.log('✅ 解析度符合要求，遊戲可以運行');
+          }
+          
+          return isLowResolution;
+        };
+        
+        window.checkResolution = function() {
+          return window.isLowResolutionDevice();
+        };
+        
+      } else {
+        // 解析度符合要求，執行遊戲載入代碼
+        initializeGame();
       }
 
-      loadingBar.style.display = "block";
-
-      var script = document.createElement("script");
-      script.src = loaderUrl;
-      script.onload = () => {
-        createUnityInstance(canvas, config, (progress) => {
-          progressBarFull.style.width = 100 * progress + "%";
-        }).then((unityInstance) => {
-          loadingBar.style.display = "none";
-        }).catch((message) => {
-          alert(message);
+      function initializeGame() {
+        // 只有非移動設備才會執行以下代碼
+        window.addEventListener("load", function () {
+          if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.register("ServiceWorker.js");
+          }
         });
-      };
-      document.body.appendChild(script);
+
+        var container = document.querySelector("#unity-container");
+        var canvas = document.querySelector("#unity-canvas");
+        var loadingBar = document.querySelector("#unity-loading-bar");
+        var progressBarFull = document.querySelector("#unity-progress-bar-full");
+        var warningBanner = document.querySelector("#unity-warning");
+
+        // Shows a temporary message banner/ribbon for a few seconds, or
+        // a permanent error message on top of the canvas if type=='error'.
+        // If type=='warning', a yellow highlight color is used.
+        // Modify or remove this function to customize the visually presented
+        // way that non-critical warnings and error messages are presented to the
+        // user.
+        function unityShowBanner(msg, type) {
+          function updateBannerVisibility() {
+            warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
+          }
+          var div = document.createElement('div');
+          div.innerHTML = msg;
+          warningBanner.appendChild(div);
+          if (type == 'error') div.style = 'background: red; padding: 10px;';
+          else {
+            if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
+            setTimeout(function() {
+              warningBanner.removeChild(div);
+              updateBannerVisibility();
+            }, 5000);
+          }
+          updateBannerVisibility();
+        }
+
+        var buildUrl = "Build";
+        var loaderUrl = buildUrl + "/BuildWeb.loader.js";
+        var config = {
+          dataUrl: buildUrl + "/BuildWeb.data.unityweb",
+          frameworkUrl: buildUrl + "/BuildWeb.framework.js.unityweb",
+          codeUrl: buildUrl + "/BuildWeb.wasm.unityweb",
+          streamingAssetsUrl: "StreamingAssets",
+          companyName: "DefaultCompany",
+          productName: "GameJam2025",
+          productVersion: "1.0",
+          showBanner: unityShowBanner,
+        };
+
+        // By default Unity keeps WebGL canvas render target size matched with
+        // the DOM size of the canvas element (scaled by window.devicePixelRatio)
+        // Set this to false if you want to decouple this synchronization from
+        // happening inside the engine, and you would instead like to size up
+        // the canvas DOM size and WebGL render target sizes yourself.
+        config.matchWebGLToCanvasSize = false;
+
+        loadingBar.style.display = "block";
+
+        var script = document.createElement("script");
+        script.src = loaderUrl;
+        script.onload = () => {
+          createUnityInstance(canvas, config, (progress) => {
+            progressBarFull.style.width = 100 * progress + "%";
+          }).then((unityInstance) => {
+            loadingBar.style.display = "none";
+          }).catch((message) => {
+            alert(message);
+          });
+        };
+        document.body.appendChild(script);
+      }
     </script>
   </body>
 </html>

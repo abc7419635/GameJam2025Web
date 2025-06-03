@@ -67,6 +67,7 @@
         productName: "GameJam2025",
         productVersion: "1.0",
         showBanner: unityShowBanner,
+        matchWebGLToCanvasSize: true,
       };
 
       // By default Unity keeps WebGL canvas render target size matched with
@@ -82,23 +83,6 @@
         meta.name = 'viewport';
         meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes, viewport-fit=cover';
         document.getElementsByTagName('head')[0].appendChild(meta);
-        
-        // 添加移動設備專用樣式
-        var mobileStyle = document.createElement('style');
-        mobileStyle.textContent = `
-          @media screen and (max-width: 768px) {
-            body {
-              overflow: hidden;
-            }
-            #unity-container {
-              position: fixed !important;
-              top: 50% !important;
-              left: 50% !important;
-              transform: translate(-50%, -50%) !important;
-            }
-          }
-        `;
-        document.head.appendChild(mobileStyle);
       }
 
       loadingBar.style.display = "block";
@@ -111,31 +95,136 @@
         }).then((unityInstance) => {
           loadingBar.style.display = "none";
           
-          // 添加窗口大小變化監聽器來維持16:9比例
-          function resizeCanvas() {
+          // 強制維持16:9比例的函數
+          function enforceAspectRatio() {
             const container = document.querySelector("#unity-container");
             const canvas = document.querySelector("#unity-canvas");
             
             if (container && canvas) {
-              const containerRect = container.getBoundingClientRect();
-              canvas.width = containerRect.width;
-              canvas.height = containerRect.height;
+              // 獲取視窗尺寸
+              const viewportWidth = window.innerWidth;
+              const viewportHeight = window.innerHeight;
+              const targetAspectRatio = 16 / 9;
+              const currentAspectRatio = viewportWidth / viewportHeight;
+              
+              let containerWidth, containerHeight;
+              
+              console.log(`Viewport: ${viewportWidth}x${viewportHeight}, ratio: ${currentAspectRatio.toFixed(4)}`);
+              
+              // 特殊處理：接近1:1的螢幕（0.9 到 1.1之間）
+              if (currentAspectRatio >= 0.9 && currentAspectRatio <= 1.1) {
+                console.log('Detected near 1:1 aspect ratio, applying special handling');
+                
+                // 在1:1螢幕上，優先嘗試使用寬度作為基準
+                containerWidth = viewportWidth;
+                containerHeight = containerWidth / targetAspectRatio;
+                
+                // 如果高度超出螢幕，改用高度作為基準
+                if (containerHeight > viewportHeight) {
+                  containerHeight = viewportHeight;
+                  containerWidth = containerHeight * targetAspectRatio;
+                }
+              } else {
+                // 一般情況的處理
+                if (currentAspectRatio > targetAspectRatio) {
+                  // 螢幕太寬，以高度為基準
+                  containerHeight = viewportHeight;
+                  containerWidth = containerHeight * targetAspectRatio;
+                } else {
+                  // 螢幕太高，以寬度為基準
+                  containerWidth = viewportWidth;
+                  containerHeight = containerWidth / targetAspectRatio;
+                }
+              }
+              
+              // 最終安全檢查：確保不超出視窗範圍
+              if (containerWidth > viewportWidth) {
+                containerWidth = viewportWidth;
+                containerHeight = containerWidth / targetAspectRatio;
+              }
+              if (containerHeight > viewportHeight) {
+                containerHeight = viewportHeight;
+                containerWidth = containerHeight * targetAspectRatio;
+              }
+              
+              // 四捨五入到整數像素
+              containerWidth = Math.floor(containerWidth);
+              containerHeight = Math.floor(containerHeight);
+              
+              // 強制設定容器尺寸（覆蓋CSS）
+              container.style.width = containerWidth + 'px !important';
+              container.style.height = containerHeight + 'px !important';
+              container.style.maxWidth = 'none !important';
+              container.style.maxHeight = 'none !important';
+              
+              // 設定canvas的實際像素尺寸
+              canvas.width = containerWidth;
+              canvas.height = containerHeight;
+              
+              // 設定canvas的顯示尺寸
+              canvas.style.width = '100%';
+              canvas.style.height = '100%';
               
               // 通知Unity實例尺寸已變化
-              if (unityInstance && unityInstance.Module) {
-                unityInstance.Module.setCanvasSize(containerRect.width, containerRect.height);
+              if (unityInstance && unityInstance.Module && unityInstance.Module.setCanvasSize) {
+                unityInstance.Module.setCanvasSize(containerWidth, containerHeight);
+              }
+              
+              // 驗證最終比例
+              const finalRatio = containerWidth / containerHeight;
+              const ratioError = Math.abs(finalRatio - targetAspectRatio);
+              
+              console.log(`Final size: ${containerWidth}x${containerHeight}`);
+              console.log(`Final ratio: ${finalRatio.toFixed(6)} (target: ${targetAspectRatio.toFixed(6)}, error: ${ratioError.toFixed(8)})`);
+              
+              // 如果比例仍然不對，強制修正
+              if (ratioError > 0.0001) {
+                console.warn('Ratio still incorrect, forcing exact correction...');
+                const exactHeight = Math.floor(containerWidth / targetAspectRatio);
+                const exactWidth = Math.floor(containerHeight * targetAspectRatio);
+                
+                if (exactHeight <= viewportHeight) {
+                  containerHeight = exactHeight;
+                } else if (exactWidth <= viewportWidth) {
+                  containerWidth = exactWidth;
+                }
+                
+                container.style.width = containerWidth + 'px !important';
+                container.style.height = containerHeight + 'px !important';
+                canvas.width = containerWidth;
+                canvas.height = containerHeight;
+                
+                if (unityInstance && unityInstance.Module && unityInstance.Module.setCanvasSize) {
+                  unityInstance.Module.setCanvasSize(containerWidth, containerHeight);
+                }
+                
+                console.log(`Corrected to: ${containerWidth}x${containerHeight}, ratio: ${(containerWidth/containerHeight).toFixed(6)}`);
               }
             }
           }
           
           // 初始設定
-          resizeCanvas();
+          setTimeout(enforceAspectRatio, 100);
           
-          // 監聽窗口大小變化
-          window.addEventListener('resize', resizeCanvas);
-          window.addEventListener('orientationchange', () => {
-            setTimeout(resizeCanvas, 100); // 延遲一點確保方向變化完成
+          // 監聽各種尺寸變化事件
+          window.addEventListener('resize', () => {
+            setTimeout(enforceAspectRatio, 50);
           });
+          
+          window.addEventListener('orientationchange', () => {
+            setTimeout(enforceAspectRatio, 200);
+          });
+          
+          // 更頻繁的檢查，特別是在載入初期
+          const checkInterval = setInterval(() => {
+            enforceAspectRatio();
+          }, 500);
+          
+          // 10秒後減少檢查頻率
+          setTimeout(() => {
+            clearInterval(checkInterval);
+            setInterval(enforceAspectRatio, 2000);
+          }, 10000);
           
         }).catch((message) => {
           alert(message);

@@ -13,49 +13,9 @@ body {
   position: relative;
   background: #231F20;
   box-sizing: border-box;
-  /* 強制使用JavaScript計算的尺寸 */
+  /* JavaScript會覆蓋這些值 */
   width: 100vw;
   height: 56.25vw;
-}
-
-/* 當螢幕比例大於16:9時（寬螢幕），使用高度作為基準 */
-@media (min-aspect-ratio: 16/9) {
-  #unity-container {
-    width: 177.78vh !important;
-    height: 100vh !important;
-  }
-}
-
-/* 當螢幕比例小於16:9時（高螢幕），使用寬度作為基準 */
-@media (max-aspect-ratio: 16/9) {
-  #unity-container {
-    width: 100vw !important;
-    height: 56.25vw !important;
-  }
-}
-
-/* 特殊處理：接近1:1的螢幕（0.9:1 到 1.1:1） */
-@media (min-aspect-ratio: 9/10) and (max-aspect-ratio: 11/10) {
-  #unity-container {
-    /* 在1:1螢幕上，優先使用寬度作為基準 */
-    width: 100vw !important;
-    height: 56.25vw !important;
-    max-height: 100vh !important;
-  }
-  
-  /* 如果計算出的高度超過螢幕高度，則改用高度作為基準 */
-  body {
-    flex-direction: column;
-  }
-}
-
-/* 當計算出的高度會超過螢幕時的備用方案 */
-@media (min-aspect-ratio: 9/10) and (max-aspect-ratio: 11/10) and (max-height: 56.25vw) {
-  #unity-container {
-    width: 177.78vh !important;
-    height: 100vh !important;
-    max-width: 100vw !important;
-  }
 }
 
 #unity-canvas { 
@@ -105,39 +65,4 @@ body {
   padding: 10px; 
   display: none;
   z-index: 1001;
-}
-
-/* 移動設備處理 */
-@media screen and (max-width: 768px) {
-  #unity-container {
-    position: fixed !important;
-    top: 50% !important;
-    left: 50% !important;
-    transform: translate(-50%, -50%) !important;
-  }
-}
-
-/* 移動設備橫屏 */
-@media screen and (max-width: 768px) and (orientation: landscape) {
-  #unity-container {
-    width: 177.78vh !important;
-    height: 100vh !important;
-  }
-}
-
-/* 移動設備直屏 */
-@media screen and (max-width: 768px) and (orientation: portrait) {
-  #unity-container {
-    width: 100vw !important;
-    height: 56.25vw !important;
-    max-height: 100vh !important;
-  }
-}
-
-/* 超小螢幕保護 */
-@media screen and (max-width: 320px) {
-  #unity-container {
-    width: 320px !important;
-    height: 180px !important;
-  }
 }

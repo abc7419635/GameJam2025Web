@@ -104,58 +104,90 @@
               // 獲取視窗尺寸
               const viewportWidth = window.innerWidth;
               const viewportHeight = window.innerHeight;
-              const targetAspectRatio = 16 / 9;
+              const targetAspectRatio = 16 / 9; // 1.7777777...
               const currentAspectRatio = viewportWidth / viewportHeight;
               
               let containerWidth, containerHeight;
               
               console.log(`Viewport: ${viewportWidth}x${viewportHeight}, ratio: ${currentAspectRatio.toFixed(4)}`);
               
-              // 特殊處理：接近1:1的螢幕（0.9 到 1.1之間）
-              if (currentAspectRatio >= 0.9 && currentAspectRatio <= 1.1) {
-                console.log('Detected near 1:1 aspect ratio, applying special handling');
-                
-                // 在1:1螢幕上，優先嘗試使用寬度作為基準
+              // 計算兩種可能的尺寸
+              let widthBasedHeight = viewportWidth / targetAspectRatio;
+              let heightBasedWidth = viewportHeight * targetAspectRatio;
+              
+              // 選擇能放入螢幕的方案
+              if (widthBasedHeight <= viewportHeight && heightBasedWidth > viewportWidth) {
+                // 只有以寬度為基準的方案可行
                 containerWidth = viewportWidth;
-                containerHeight = containerWidth / targetAspectRatio;
-                
-                // 如果高度超出螢幕，改用高度作為基準
-                if (containerHeight > viewportHeight) {
+                containerHeight = Math.round(widthBasedHeight);
+                console.log(`Using width-based: ${containerWidth}x${containerHeight}`);
+              } else if (heightBasedWidth <= viewportWidth && widthBasedHeight > viewportHeight) {
+                // 只有以高度為基準的方案可行
+                containerWidth = Math.round(heightBasedWidth);
+                containerHeight = viewportHeight;
+                console.log(`Using height-based: ${containerWidth}x${containerHeight}`);
+              } else if (widthBasedHeight <= viewportHeight && heightBasedWidth <= viewportWidth) {
+                // 兩種方案都可行，選擇較大的那個（更好利用螢幕空間）
+                if (widthBasedHeight * viewportWidth >= heightBasedWidth * viewportHeight) {
+                  containerWidth = viewportWidth;
+                  containerHeight = Math.round(widthBasedHeight);
+                  console.log(`Both viable, using width-based (larger): ${containerWidth}x${containerHeight}`);
+                } else {
+                  containerWidth = Math.round(heightBasedWidth);
                   containerHeight = viewportHeight;
-                  containerWidth = containerHeight * targetAspectRatio;
+                  console.log(`Both viable, using height-based (larger): ${containerWidth}x${containerHeight}`);
                 }
               } else {
-                // 一般情況的處理
-                if (currentAspectRatio > targetAspectRatio) {
-                  // 螢幕太寬，以高度為基準
-                  containerHeight = viewportHeight;
-                  containerWidth = containerHeight * targetAspectRatio;
-                } else {
-                  // 螢幕太高，以寬度為基準
+                // 極端情況：兩種都超出螢幕，選擇較小的
+                if (widthBasedHeight <= heightBasedWidth) {
                   containerWidth = viewportWidth;
-                  containerHeight = containerWidth / targetAspectRatio;
+                  containerHeight = Math.round(widthBasedHeight);
+                  console.log(`Extreme case, using width-based: ${containerWidth}x${containerHeight}`);
+                } else {
+                  containerWidth = Math.round(heightBasedWidth);
+                  containerHeight = viewportHeight;
+                  console.log(`Extreme case, using height-based: ${containerWidth}x${containerHeight}`);
                 }
               }
               
-              // 最終安全檢查：確保不超出視窗範圍
+              // 精確修正：確保比例完全正確
+              const currentRatio = containerWidth / containerHeight;
+              const ratioError = Math.abs(currentRatio - targetAspectRatio);
+              
+              if (ratioError > 0.001) {
+                console.warn(`Ratio error: ${ratioError.toFixed(6)}, applying precision correction...`);
+                
+                // 重新計算以確保精確比例
+                if (containerWidth <= viewportWidth && containerHeight <= viewportHeight) {
+                  // 當前尺寸在螢幕範圍內，微調以獲得精確比例
+                  const preciseHeight = containerWidth / targetAspectRatio;
+                  const preciseWidth = containerHeight * targetAspectRatio;
+                  
+                  if (Math.abs(preciseHeight - containerHeight) <= 1 && preciseHeight <= viewportHeight) {
+                    containerHeight = Math.round(preciseHeight);
+                  } else if (Math.abs(preciseWidth - containerWidth) <= 1 && preciseWidth <= viewportWidth) {
+                    containerWidth = Math.round(preciseWidth);
+                  }
+                }
+              }
+              
+              // 最終安全檢查：確保不超出螢幕
               if (containerWidth > viewportWidth) {
                 containerWidth = viewportWidth;
-                containerHeight = containerWidth / targetAspectRatio;
+                containerHeight = Math.round(containerWidth / targetAspectRatio);
               }
               if (containerHeight > viewportHeight) {
                 containerHeight = viewportHeight;
-                containerWidth = containerHeight * targetAspectRatio;
+                containerWidth = Math.round(containerHeight * targetAspectRatio);
               }
               
-              // 四捨五入到整數像素
-              containerWidth = Math.floor(containerWidth);
-              containerHeight = Math.floor(containerHeight);
-              
-              // 強制設定容器尺寸（覆蓋CSS）
-              container.style.width = containerWidth + 'px !important';
-              container.style.height = containerHeight + 'px !important';
-              container.style.maxWidth = 'none !important';
-              container.style.maxHeight = 'none !important';
+              // 強制設定容器尺寸（完全覆蓋CSS）
+              container.style.setProperty('width', containerWidth + 'px', 'important');
+              container.style.setProperty('height', containerHeight + 'px', 'important');
+              container.style.setProperty('max-width', 'none', 'important');
+              container.style.setProperty('max-height', 'none', 'important');
+              container.style.setProperty('min-width', 'auto', 'important');
+              container.style.setProperty('min-height', 'auto', 'important');
               
               // 設定canvas的實際像素尺寸
               canvas.width = containerWidth;
@@ -170,35 +202,17 @@
                 unityInstance.Module.setCanvasSize(containerWidth, containerHeight);
               }
               
-              // 驗證最終比例
+              // 最終驗證
               const finalRatio = containerWidth / containerHeight;
-              const ratioError = Math.abs(finalRatio - targetAspectRatio);
+              const finalError = Math.abs(finalRatio - targetAspectRatio);
               
               console.log(`Final size: ${containerWidth}x${containerHeight}`);
-              console.log(`Final ratio: ${finalRatio.toFixed(6)} (target: ${targetAspectRatio.toFixed(6)}, error: ${ratioError.toFixed(8)})`);
+              console.log(`Final ratio: ${finalRatio.toFixed(8)} (target: ${targetAspectRatio.toFixed(8)}, error: ${finalError.toFixed(10)})`);
               
-              // 如果比例仍然不對，強制修正
-              if (ratioError > 0.0001) {
-                console.warn('Ratio still incorrect, forcing exact correction...');
-                const exactHeight = Math.floor(containerWidth / targetAspectRatio);
-                const exactWidth = Math.floor(containerHeight * targetAspectRatio);
-                
-                if (exactHeight <= viewportHeight) {
-                  containerHeight = exactHeight;
-                } else if (exactWidth <= viewportWidth) {
-                  containerWidth = exactWidth;
-                }
-                
-                container.style.width = containerWidth + 'px !important';
-                container.style.height = containerHeight + 'px !important';
-                canvas.width = containerWidth;
-                canvas.height = containerHeight;
-                
-                if (unityInstance && unityInstance.Module && unityInstance.Module.setCanvasSize) {
-                  unityInstance.Module.setCanvasSize(containerWidth, containerHeight);
-                }
-                
-                console.log(`Corrected to: ${containerWidth}x${containerHeight}, ratio: ${(containerWidth/containerHeight).toFixed(6)}`);
+              if (finalError > 0.001) {
+                console.error(`CRITICAL: Aspect ratio still incorrect! Error: ${finalError.toFixed(10)}`);
+              } else {
+                console.log('✓ 16:9 aspect ratio successfully enforced');
               }
             }
           }

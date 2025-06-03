@@ -96,149 +96,98 @@
           loadingBar.style.display = "none";
           
           // 強制維持16:9比例的函數
+          let lastViewportWidth = 0;
+          let lastViewportHeight = 0;
+          let isResizing = false;
+          
           function enforceAspectRatio() {
             const container = document.querySelector("#unity-container");
             const canvas = document.querySelector("#unity-canvas");
             
-            if (container && canvas) {
-              // 獲取視窗尺寸
-              const viewportWidth = window.innerWidth;
-              const viewportHeight = window.innerHeight;
-              const targetAspectRatio = 16 / 9; // 1.7777777...
-              const currentAspectRatio = viewportWidth / viewportHeight;
-              
-              let containerWidth, containerHeight;
-              
-              console.log(`Viewport: ${viewportWidth}x${viewportHeight}, ratio: ${currentAspectRatio.toFixed(4)}`);
-              
-              // 計算兩種可能的尺寸
-              let widthBasedHeight = viewportWidth / targetAspectRatio;
-              let heightBasedWidth = viewportHeight * targetAspectRatio;
-              
-              // 選擇能放入螢幕的方案
-              if (widthBasedHeight <= viewportHeight && heightBasedWidth > viewportWidth) {
-                // 只有以寬度為基準的方案可行
-                containerWidth = viewportWidth;
-                containerHeight = Math.round(widthBasedHeight);
-                console.log(`Using width-based: ${containerWidth}x${containerHeight}`);
-              } else if (heightBasedWidth <= viewportWidth && widthBasedHeight > viewportHeight) {
-                // 只有以高度為基準的方案可行
-                containerWidth = Math.round(heightBasedWidth);
-                containerHeight = viewportHeight;
-                console.log(`Using height-based: ${containerWidth}x${containerHeight}`);
-              } else if (widthBasedHeight <= viewportHeight && heightBasedWidth <= viewportWidth) {
-                // 兩種方案都可行，選擇較大的那個（更好利用螢幕空間）
-                if (widthBasedHeight * viewportWidth >= heightBasedWidth * viewportHeight) {
-                  containerWidth = viewportWidth;
-                  containerHeight = Math.round(widthBasedHeight);
-                  console.log(`Both viable, using width-based (larger): ${containerWidth}x${containerHeight}`);
-                } else {
-                  containerWidth = Math.round(heightBasedWidth);
-                  containerHeight = viewportHeight;
-                  console.log(`Both viable, using height-based (larger): ${containerWidth}x${containerHeight}`);
-                }
-              } else {
-                // 極端情況：兩種都超出螢幕，選擇較小的
-                if (widthBasedHeight <= heightBasedWidth) {
-                  containerWidth = viewportWidth;
-                  containerHeight = Math.round(widthBasedHeight);
-                  console.log(`Extreme case, using width-based: ${containerWidth}x${containerHeight}`);
-                } else {
-                  containerWidth = Math.round(heightBasedWidth);
-                  containerHeight = viewportHeight;
-                  console.log(`Extreme case, using height-based: ${containerWidth}x${containerHeight}`);
-                }
-              }
-              
-              // 精確修正：確保比例完全正確
-              const currentRatio = containerWidth / containerHeight;
-              const ratioError = Math.abs(currentRatio - targetAspectRatio);
-              
-              if (ratioError > 0.001) {
-                console.warn(`Ratio error: ${ratioError.toFixed(6)}, applying precision correction...`);
-                
-                // 重新計算以確保精確比例
-                if (containerWidth <= viewportWidth && containerHeight <= viewportHeight) {
-                  // 當前尺寸在螢幕範圍內，微調以獲得精確比例
-                  const preciseHeight = containerWidth / targetAspectRatio;
-                  const preciseWidth = containerHeight * targetAspectRatio;
-                  
-                  if (Math.abs(preciseHeight - containerHeight) <= 1 && preciseHeight <= viewportHeight) {
-                    containerHeight = Math.round(preciseHeight);
-                  } else if (Math.abs(preciseWidth - containerWidth) <= 1 && preciseWidth <= viewportWidth) {
-                    containerWidth = Math.round(preciseWidth);
-                  }
-                }
-              }
-              
-              // 最終安全檢查：確保不超出螢幕
-              if (containerWidth > viewportWidth) {
-                containerWidth = viewportWidth;
-                containerHeight = Math.round(containerWidth / targetAspectRatio);
-              }
-              if (containerHeight > viewportHeight) {
-                containerHeight = viewportHeight;
-                containerWidth = Math.round(containerHeight * targetAspectRatio);
-              }
-              
-              // 強制設定容器尺寸（完全覆蓋CSS）
-              container.style.setProperty('width', containerWidth + 'px', 'important');
-              container.style.setProperty('height', containerHeight + 'px', 'important');
-              container.style.setProperty('max-width', 'none', 'important');
-              container.style.setProperty('max-height', 'none', 'important');
-              container.style.setProperty('min-width', 'auto', 'important');
-              container.style.setProperty('min-height', 'auto', 'important');
-              
-              // 設定canvas的實際像素尺寸
-              canvas.width = containerWidth;
-              canvas.height = containerHeight;
-              
-              // 設定canvas的顯示尺寸
-              canvas.style.width = '100%';
-              canvas.style.height = '100%';
-              
-              // 通知Unity實例尺寸已變化
-              if (unityInstance && unityInstance.Module && unityInstance.Module.setCanvasSize) {
-                unityInstance.Module.setCanvasSize(containerWidth, containerHeight);
-              }
-              
-              // 最終驗證
+            if (!container || !canvas) return;
+            
+            // 獲取視窗尺寸
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            
+            // 如果尺寸沒有變化，跳過計算
+            if (viewportWidth === lastViewportWidth && viewportHeight === lastViewportHeight) {
+              return;
+            }
+            
+            lastViewportWidth = viewportWidth;
+            lastViewportHeight = viewportHeight;
+            
+            const targetAspectRatio = 16 / 9;
+            
+            // 簡化計算：直接選擇最佳方案
+            let containerWidth, containerHeight;
+            
+            const widthBasedHeight = viewportWidth / targetAspectRatio;
+            const heightBasedWidth = viewportHeight * targetAspectRatio;
+            
+            if (widthBasedHeight <= viewportHeight) {
+              // 以寬度為基準
+              containerWidth = viewportWidth;
+              containerHeight = Math.round(widthBasedHeight);
+            } else {
+              // 以高度為基準
+              containerWidth = Math.round(heightBasedWidth);
+              containerHeight = viewportHeight;
+            }
+            
+            // 設定容器尺寸
+            container.style.width = containerWidth + 'px';
+            container.style.height = containerHeight + 'px';
+            
+            // 設定canvas尺寸
+            canvas.width = containerWidth;
+            canvas.height = containerHeight;
+            
+            // 通知Unity實例（如果存在）
+            if (unityInstance && unityInstance.Module && unityInstance.Module.setCanvasSize) {
+              unityInstance.Module.setCanvasSize(containerWidth, containerHeight);
+            }
+            
+            // 簡化的驗證（僅在開發模式下）
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
               const finalRatio = containerWidth / containerHeight;
-              const finalError = Math.abs(finalRatio - targetAspectRatio);
-              
-              console.log(`Final size: ${containerWidth}x${containerHeight}`);
-              console.log(`Final ratio: ${finalRatio.toFixed(8)} (target: ${targetAspectRatio.toFixed(8)}, error: ${finalError.toFixed(10)})`);
-              
-              if (finalError > 0.001) {
-                console.error(`CRITICAL: Aspect ratio still incorrect! Error: ${finalError.toFixed(10)}`);
-              } else {
-                console.log('✓ 16:9 aspect ratio successfully enforced');
+              const error = Math.abs(finalRatio - targetAspectRatio);
+              if (error > 0.01) {
+                console.warn(`Aspect ratio error: ${error.toFixed(4)}`);
               }
             }
           }
           
+          // 防抖函數
+          function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+              const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+              };
+              clearTimeout(timeout);
+              timeout = setTimeout(later, wait);
+            };
+          }
+          
+          // 創建防抖版本的函數
+          const debouncedEnforceAspectRatio = debounce(enforceAspectRatio, 100);
+          
           // 初始設定
           setTimeout(enforceAspectRatio, 100);
           
-          // 監聽各種尺寸變化事件
-          window.addEventListener('resize', () => {
-            setTimeout(enforceAspectRatio, 50);
-          });
-          
+          // 監聽尺寸變化事件（使用防抖）
+          window.addEventListener('resize', debouncedEnforceAspectRatio);
           window.addEventListener('orientationchange', () => {
             setTimeout(enforceAspectRatio, 200);
           });
           
-          // 更頻繁的檢查，特別是在載入初期
-          const checkInterval = setInterval(() => {
-            enforceAspectRatio();
-          }, 500);
-          
-          // 10秒後減少檢查頻率
+          // 減少定期檢查的頻率
           setTimeout(() => {
-            clearInterval(checkInterval);
-            setInterval(enforceAspectRatio, 2000);
-          }, 10000);
+            setInterval(enforceAspectRatio, 5000); // 每5秒檢查一次
+          }, 2000);
           
         }).catch((message) => {
           alert(message);

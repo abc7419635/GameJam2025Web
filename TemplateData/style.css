@@ -1,8 +1,75 @@
-body { padding: 0; margin: 0 }
-#unity-container { position: fixed; width: 100%; height: 100%; }
-#unity-canvas { width: 100%; height: 100%; background: #231F20 }
-#unity-loading-bar { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: none }
-#unity-logo { width: 154px; height: 130px; background: url('unity-logo-dark.png') no-repeat center }
-#unity-progress-bar-empty { margin-left: auto; margin-right: auto; width: 141px; height: 18px; margin-top: 10px; background: url('progress-bar-empty-dark.png') no-repeat center }
-#unity-progress-bar-full { width: 0%; height: 18px; margin-top: 10px; background: url('progress-bar-full-dark.png') no-repeat center }
-#unity-warning { position: absolute; left: 50%; top: 5%; transform: translate(-50%); background: white; padding: 10px; display: none }
+body { 
+  padding: 0; 
+  margin: 0; 
+  background: #231F20;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+#unity-container { 
+  position: relative;
+  width: 100vw;
+  height: 56.25vw; /* 16:9 aspect ratio */
+  max-width: 177.78vh; /* 16:9 aspect ratio */
+  max-height: 100vh;
+  background: #231F20;
+}
+
+/* 當螢幕比例小於16:9時，使用高度作為基準 */
+@media (max-aspect-ratio: 16/9) {
+  #unity-container {
+    width: 177.78vh; /* 16:9 aspect ratio */
+    height: 100vh;
+  }
+}
+
+#unity-canvas { 
+  width: 100%; 
+  height: 100%; 
+  background: #231F20;
+  display: block;
+}
+
+#unity-loading-bar { 
+  position: absolute; 
+  left: 50%; 
+  top: 50%; 
+  transform: translate(-50%, -50%); 
+  display: none;
+  z-index: 1000;
+}
+
+#unity-logo { 
+  width: 154px; 
+  height: 130px; 
+  background: url('unity-logo-dark.png') no-repeat center;
+}
+
+#unity-progress-bar-empty { 
+  margin-left: auto; 
+  margin-right: auto; 
+  width: 141px; 
+  height: 18px; 
+  margin-top: 10px; 
+  background: url('progress-bar-empty-dark.png') no-repeat center;
+}
+
+#unity-progress-bar-full { 
+  width: 0%; 
+  height: 18px; 
+  margin-top: 10px; 
+  background: url('progress-bar-full-dark.png') no-repeat center;
+}
+
+#unity-warning { 
+  position: absolute; 
+  left: 50%; 
+  top: 5%; 
+  transform: translate(-50%); 
+  background: white; 
+  padding: 10px; 
+  display: none;
+  z-index: 1001;
+}

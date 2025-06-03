@@ -7,20 +7,10 @@
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
     <link rel="manifest" href="manifest.webmanifest">
-    <style>
-      #unity-container {
-        margin: 0;
-        padding: 0;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-      }
-    </style>
   </head>
-  <body style="margin: 0; background: #222; display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+  <body>
     <div id="unity-container">
-      <canvas id="unity-canvas" width="1600" height="900" style="width: 1600px; height: 900px;"></canvas>
+      <canvas id="unity-canvas" tabindex="-1"></canvas>
       <div id="unity-loading-bar">
         <div id="unity-logo"></div>
         <div id="unity-progress-bar-empty">
@@ -30,138 +20,6 @@
       <div id="unity-warning"> </div>
     </div>
     <script>
-      // 檢測設備解析度並阻止低解析度設備
-      function isLowResolutionDevice() {
-        const screenWidth = window.innerWidth;
-        const screenHeight = window.innerHeight;
-        
-        // 最低解析度要求：1600×900
-        const minWidth = 1600;
-        const minHeight = 900;
-        
-        const isLowResolution = screenWidth < minWidth || screenHeight < minHeight;
-        
-        // 顯示檢測結果
-        console.log('📊 當前解析度:', `${screenWidth} × ${screenHeight}`);
-        console.log('📏 最低要求:', `${minWidth} × ${minHeight}`);
-        
-        if (isLowResolution) {
-          console.log('❌ 解析度不足，遊戲被阻止');
-          if (screenWidth < minWidth) {
-            console.log('💡 寬度不足: 需要 ' + minWidth + 'px，目前 ' + screenWidth + 'px');
-          }
-          if (screenHeight < minHeight) {
-            console.log('💡 高度不足: 需要 ' + minHeight + 'px，目前 ' + screenHeight + 'px');
-          }
-        } else {
-          console.log('✅ 解析度符合要求，遊戲可以運行');
-        }
-        
-        return isLowResolution;
-      }
-
-      // 添加手動檢測函數（可在 Console 中調用）
-      window.checkResolution = function() {
-        return isLowResolutionDevice();
-      };
-
-      // 執行解析度檢測
-      if (isLowResolutionDevice()) {
-        // 阻止遊戲載入，顯示解析度不足訊息
-        document.body.innerHTML = `
-          <div style="
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: #222;
-            margin: 0;
-            padding: 20px;
-            box-sizing: border-box;
-            font-family: Arial, sans-serif;
-          ">
-            <div style="
-              background: #333;
-              color: white;
-              padding: 40px;
-              border-radius: 15px;
-              text-align: center;
-              max-width: 500px;
-              width: 100%;
-              box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-              border: 2px solid #ff6b6b;
-            ">
-              <div style="font-size: 48px; margin-bottom: 20px;">🖥️❌</div>
-              <h2 style="color: #ff6b6b; margin-bottom: 20px; font-size: 24px;">
-                請使用電腦最大化瀏覽器開啟此網頁
-              </h2>
-              <p style="font-size: 18px; line-height: 1.6; margin-bottom: 20px;">
-                此遊戲需要最低視窗解析度 <strong>1600×900</strong>
-              </p>
-              <p style="font-size: 16px; color: #ccc; margin-bottom: 15px;">
-                您目前視窗解析度：<span style="color: #ff6b6b;">${window.innerWidth}×${window.innerHeight}</span>
-              </p>
-              <p style="font-size: 14px; color: #ccc; margin-bottom: 15px;">
-                請調整螢幕解析度或使用更大的螢幕
-              </p>
-              <p style="font-size: 12px; color: #888; margin-bottom: 20px;">
-                建議使用桌面電腦或大尺寸筆電
-              </p>
-              <button onclick="location.reload()" style="
-                background: #ff6b6b;
-                color: white;
-                border: none;
-                padding: 10px 20px;
-                border-radius: 5px;
-                cursor: pointer;
-                font-size: 14px;
-              ">
-                重新檢測解析度
-              </button>
-              <p style="font-size: 10px; color: #666; margin-top: 10px;">
-                按 F12 開啟開發者工具查看詳細檢測信息
-              </p>
-            </div>
-          </div>
-        `;
-        
-        // 重新定義檢測函數（因為頁面內容被替換了）
-        window.isLowResolutionDevice = function() {
-          const screenWidth = window.innerWidth;
-          const screenHeight = window.innerHeight;
-          const minWidth = 1600;
-          const minHeight = 900;
-          const isLowResolution = screenWidth < minWidth || screenHeight < minHeight;
-          
-          console.log('📊 當前解析度:', screenWidth + ' × ' + screenHeight);
-          console.log('📏 最低要求:', minWidth + ' × ' + minHeight);
-          
-          if (isLowResolution) {
-            console.log('❌ 解析度不足，遊戲被阻止');
-            if (screenWidth < minWidth) {
-              console.log('💡 寬度不足: 需要 ' + minWidth + 'px，目前 ' + screenWidth + 'px');
-            }
-            if (screenHeight < minHeight) {
-              console.log('💡 高度不足: 需要 ' + minHeight + 'px，目前 ' + screenHeight + 'px');
-            }
-          } else {
-            console.log('✅ 解析度符合要求，遊戲可以運行');
-          }
-          
-          return isLowResolution;
-        };
-        
-        window.checkResolution = function() {
-          return window.isLowResolutionDevice();
-        };
-        
-      } else {
-        // 解析度符合要求，執行遊戲載入代碼
-        initializeGame();
-      }
-
-      function initializeGame() {
-        // 只有非移動設備才會執行以下代碼
       window.addEventListener("load", function () {
         if ("serviceWorker" in navigator) {
           navigator.serviceWorker.register("ServiceWorker.js");
@@ -216,7 +74,32 @@
       // Set this to false if you want to decouple this synchronization from
       // happening inside the engine, and you would instead like to size up
       // the canvas DOM size and WebGL render target sizes yourself.
-        config.matchWebGLToCanvasSize = false;
+      // config.matchWebGLToCanvasSize = false;
+
+      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+        // Mobile device style: 確保在移動設備上也能維持16:9比例
+        var meta = document.createElement('meta');
+        meta.name = 'viewport';
+        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes, viewport-fit=cover';
+        document.getElementsByTagName('head')[0].appendChild(meta);
+        
+        // 添加移動設備專用樣式
+        var mobileStyle = document.createElement('style');
+        mobileStyle.textContent = `
+          @media screen and (max-width: 768px) {
+            body {
+              overflow: hidden;
+            }
+            #unity-container {
+              position: fixed !important;
+              top: 50% !important;
+              left: 50% !important;
+              transform: translate(-50%, -50%) !important;
+            }
+          }
+        `;
+        document.head.appendChild(mobileStyle);
+      }
 
       loadingBar.style.display = "block";
 
@@ -227,12 +110,38 @@
           progressBarFull.style.width = 100 * progress + "%";
         }).then((unityInstance) => {
           loadingBar.style.display = "none";
+          
+          // 添加窗口大小變化監聽器來維持16:9比例
+          function resizeCanvas() {
+            const container = document.querySelector("#unity-container");
+            const canvas = document.querySelector("#unity-canvas");
+            
+            if (container && canvas) {
+              const containerRect = container.getBoundingClientRect();
+              canvas.width = containerRect.width;
+              canvas.height = containerRect.height;
+              
+              // 通知Unity實例尺寸已變化
+              if (unityInstance && unityInstance.Module) {
+                unityInstance.Module.setCanvasSize(containerRect.width, containerRect.height);
+              }
+            }
+          }
+          
+          // 初始設定
+          resizeCanvas();
+          
+          // 監聽窗口大小變化
+          window.addEventListener('resize', resizeCanvas);
+          window.addEventListener('orientationchange', () => {
+            setTimeout(resizeCanvas, 100); // 延遲一點確保方向變化完成
+          });
+          
         }).catch((message) => {
           alert(message);
         });
       };
       document.body.appendChild(script);
-      }
     </script>
   </body>
 </html>
